@@ -89,6 +89,7 @@ class RAG:
     def _save_chunks(self, chunks: List[TextChunk], path: Path):
         with open(path, "w", encoding="utf-8") as f:
             json.dump([chunk.__dict__ for chunk in chunks], f, ensure_ascii=False, indent=4)   
+    
     def _load_chunks(self, path: Path) -> List[TextChunk]:
         with open(path, "r", encoding="utf-8") as f:
             chunks_data = json.load(f)  
