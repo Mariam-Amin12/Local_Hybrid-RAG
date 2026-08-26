@@ -11,7 +11,7 @@ from app.rag_pipeline.fiuse import reciprocal_rank_fusion
 from app.rag_pipeline.reranker import Reranker
 from app.rag_pipeline.schema import Document, TextChunk
 from app.rag_pipeline.sparce_search import BM25Index
-from app.rag_pipeline.preprocessing import chunk_document, clean_text, reconstruct_full_text, chunk_segments, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP, DEFAULT_TOP_K, DEFAULT_TOP_N
+from app.rag_pipeline.preprocessing import chunk_document, clean_text, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP, DEFAULT_TOP_K, DEFAULT_TOP_N
 
 
 class RAG:
