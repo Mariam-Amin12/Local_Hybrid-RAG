@@ -5,6 +5,9 @@ from typing import List, Tuple, Dict
 import chromadb
 from pathlib import Path
 import json
+from docx import Document as DocxDocument
+
+from pypdf import PdfReader
 
 from app.rag_pipeline.dense_search import VectorStore
 from app.rag_pipeline.fiuse import reciprocal_rank_fusion
@@ -35,13 +38,13 @@ class RAG:
 
     def ingest(self, file_path:str):
         print (f"Starting ingestion for {file_path} ...")
-        source_name=Path(file_path).stem
+        source_name=Path(file_path).name
 
         if source_name in self._ingested_sources:
             print (f"Source {source_name} already ingested. Skipping.")
             return {**self._ingested_sources[source_name], "status": "already_ingested"}
 
-        chunks_path = self.persist_dir / f"{self._hash(source_name)}_chunks.json"
+        chunks_path = self.persist_dir / "chunks" / f"{source_name}_chunks.json"
         stats:dict ={"source":source_name}
         print (f"Checking for existing chunks at {chunks_path} ...")
 
@@ -53,10 +56,11 @@ class RAG:
 
         else:
             print(f"processing {source_name} ...")
-            raw_text = open(file_path, "r", encoding="utf-8").read()
+
+            raw_text = self.load_text_from_file(file_path)
 
             cleaned_text = clean_text(raw_text)
-
+            print(f"[ingest] Cleaned text length: {len(cleaned_text)} characters", flush=True)
             source_chunks = chunk_document(
                 Document(text=cleaned_text, source=source_name, metadata={},document_id=source_name),
                 chunk_size=self.chunk_size,
@@ -90,7 +94,61 @@ class RAG:
             chunks_data = json.load(f)  
 
         return [TextChunk(**data) for data in chunks_data]
+    def load_text_from_file(self, file_path: str) -> str:
 
+        path = Path(file_path)
+
+        if not path.exists():
+            raise FileNotFoundError(
+                f"File not found: {file_path}"
+            )
+
+        extension = path.suffix.lower()
+
+
+        if extension == ".txt":
+
+            return path.read_text(
+                encoding="utf-8",
+                errors="replace"
+            )
+        elif extension == ".pdf":
+
+            reader = PdfReader(file_path)
+
+            pages = []
+
+            for page in reader.pages:
+
+                page_text = page.extract_text() or ""
+
+                if page_text.strip():
+                    pages.append(page_text)
+
+            return "\n\n".join(pages)
+
+        elif extension == ".docx":
+
+            document = DocxDocument(file_path)
+
+            paragraphs = []
+
+            for paragraph in document.paragraphs:
+
+                text = paragraph.text.strip()
+
+                if text:
+                    paragraphs.append(text)
+
+            return "\n".join(paragraphs)
+
+        
+        else:
+
+            raise ValueError(
+                f"Unsupported file type: {extension}. "
+                f"Supported types: .txt, .pdf, .docx"
+            )
     
     def retrieve(self, query: str) -> List[Tuple[str, dict, float]]:
         print(f"[retrieve] Starting query: {query!r}", flush=True)
@@ -145,7 +203,7 @@ class RAG:
             sources = state.get("ingested_sources", [])
 
             for name in sources:
-                chunks_path = self.persist_dir / f"{self ._hash(name)}_chunks. json"
+                chunks_path = self.persist_dir / f"{name}_chunks.json"
                 print(f"[state] Checking cached chunks for {name!r}: {chunks_path}", flush=True)
                 if not chunks_path.exists():
                     print(f"[state] Cached chunks missing for {name!r}", flush=True)
@@ -176,10 +234,7 @@ class RAG:
             print(f"A Could not restore RAG state: {e}")
         return False
 
-          
-
-    def _hash(self, name: str) -> str:
-        return hashlib.md5(name.encode()).hexdigest() [:10]
+        
 
     def _save_source_chunks(self, chunks: List[TextChunk], path: Path):
         data = [
