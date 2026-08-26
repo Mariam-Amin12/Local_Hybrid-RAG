@@ -1,0 +1,6 @@
+*rag_store/
+*.jsonl
+*.sqlite
+*.env
+*__pycache__/
+.vscode/
