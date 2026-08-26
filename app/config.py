@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     RAG_PERSIST_DIR: str = "./rag_store"
     RAG_CHUNK_SIZE: int = 500
     RAG_OVERLAP: int = 88
+    REDIS_URL: str = "redis://localhost:6379/0"
     RAG_TOP_K: int = 20
     RAG_TOP_N: int = 5
     ENV : str = "development"  # or "production"

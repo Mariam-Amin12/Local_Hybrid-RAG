@@ -22,4 +22,8 @@ def verify_api_key(
         print("[auth] Rejected request with invalid or missing API key", flush=True)
         raise HTTPException(status_code=401, detail="Invalid or missing API key.")
     print("[auth] API key accepted", flush=True)
-    
+
+
+def get_redis_session_store(request: Request):
+    print("[dependency] Providing shared RedisSessionStore instance", flush=True)
+    return request.app.state.session_store
