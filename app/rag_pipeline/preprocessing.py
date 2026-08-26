@@ -19,6 +19,7 @@ DEFAULT_TOP_N = int(os.getenv("RAG_TOP_N", 20))
 
 
 def clean_text(text: str) -> str: # more general to handle diff types of files
+    print(f"[preprocess] Cleaning text with {len(text)} characters", flush=True)
     # Normalize Unicode
     text = unicodedata.normalize("NFKC", text)
 
@@ -38,7 +39,9 @@ def clean_text(text: str) -> str: # more general to handle diff types of files
     # Limit excessive blank lines
     text = re.sub(r"\n{3,}", "\n\n", text)
 
-    return text.strip()
+    cleaned = text.strip()
+    print(f"[preprocess] Cleaned text has {len(cleaned)} characters", flush=True)
+    return cleaned
 
 
 
@@ -47,7 +50,11 @@ def chunk_document(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     overlap: int = DEFAULT_OVERLAP,
 ) -> List[TextChunk]:
-
+    print(
+        f"[preprocess] Chunking document={document.document_id!r}, "
+        f"words={len(document.text.split())}, size={chunk_size}, overlap={overlap}",
+        flush=True,
+    )
     chunks = []
     words = document.text.split()
 
@@ -85,4 +92,5 @@ def chunk_document(
         start_idx += chunk_size - overlap
         char_index = char_end + 1
 
+    print(f"[preprocess] Created {len(chunks)} chunks", flush=True)
     return chunks

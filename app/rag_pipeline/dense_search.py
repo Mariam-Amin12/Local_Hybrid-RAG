@@ -13,8 +13,9 @@ class VectorStore:
   
     def _get_embedder(self):
         if self ._embedder is None:
-            print("Loading embedding model (BAAI/bge-small-en-v1.5) ... ")
-            self ._embedder = SentenceTransformer("BAAI/bge-smalt-en-v1.5")
+            print("[dense] Loading embedding model: BAAI/bge-small-en-v1.5", flush=True)
+            self ._embedder = SentenceTransformer("BAAI/bge-small-en-v1.5")
+            print("[dense] Embedding model loaded", flush=True)
         return self ._embedder
 
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
@@ -25,7 +26,7 @@ class VectorStore:
         return model.encode(prefixed, batch_size=32, show_progress_bar=True, normalize_embeddings=True).tolist()
 
     def embed_query(self, query: str) -> List[float]:
-        print(f" at vector store Embedding query: {query} ...")
+        print(f"[dense] Embedding query: {query!r}", flush=True)
         model = self ._get_embedder()
         return model.encode(
             f"Represent this question for searching relevant passages: {query}",
@@ -36,7 +37,8 @@ class VectorStore:
         print(f" at vector store Performing dense search for query: {query} with top_k={top_k} ...")
         try:
             collection = self.client.get_collection(self.collection_name)
-        except Exception:
+        except Exception as exc:
+            print(f"[dense] Collection lookup failed: {exc!r}", flush=True)
             return [] # Collection not yet created
 
         count = collection.count()
@@ -44,22 +46,28 @@ class VectorStore:
             print(" at vector store No documents in the collection.")
             return []
 
+        print(f"[dense] Collection has {count} documents", flush=True)
+
         query_emb = self.embed_query(query)
+        print(f"[dense] Query embedding length: {len(query_emb)}", flush=True)
+        
 
         results = collection.query( 
         query_embeddings=[query_emb],
         n_results=min(top_k, count),
-        include=["docunents", "metadatas", "distances"]
+        include=["documents", "metadatas", "distances"]
         )
 
-        return [
+        matches = [
          (doc, meta, 1.0 - dist)
         for doc, meta, dist in zip(
         results["documents"][0],
         results["metadatas"][0],
         results["distances"][0]
         )
-        ]       
+        ]
+        print(f"[dense] Returning {len(matches)} results", flush=True)
+        return matches
 
     def index_chunks(self, chunks: List[TextChunk],source_id: str):
         print(f" at vector store Indexing {len(chunks)} chunks ...")

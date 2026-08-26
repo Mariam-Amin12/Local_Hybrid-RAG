@@ -93,13 +93,19 @@ class RAG:
 
     
     def retrieve(self, query: str) -> List[Tuple[str, dict, float]]:
+        print(f"[retrieve] Starting query: {query!r}", flush=True)
         dense_results = self.vector_store.dense_search(query, top_k=self.top_k_retrieve)
+        print(f"[retrieve] Dense results: {len(dense_results)}", flush=True)
         bm25_results = self.bm25_index.search(query, top_k=self.top_k_retrieve)
+        print(f"[retrieve] BM25 results: {len(bm25_results)}", flush=True)
 
         fused = reciprocal_rank_fusion(dense_results, bm25_results)
+        print(f"[retrieve] Fused results: {len(fused)}", flush=True)
         if not fused :
+            print("[retrieve] No fused results; stopping", flush=True)
             return []
         reranked_results = self.reranker.rerank(query, fused, top_n=self.top_n_rerank)
+        print(f"[retrieve] Reranked results: {len(reranked_results)}", flush=True)
         return reranked_results
 
     
@@ -129,7 +135,9 @@ class RAG:
     def load_state(self) -> bool:
 
         state_path = self.persist_dir / "state.json"
+        print(f"[state] Loading state from {state_path}", flush=True)
         if not state_path.exists():
+            print("[state] No state file found", flush=True)
             return False
         try:
 
@@ -138,7 +146,9 @@ class RAG:
 
             for name in sources:
                 chunks_path = self.persist_dir / f"{self ._hash(name)}_chunks. json"
+                print(f"[state] Checking cached chunks for {name!r}: {chunks_path}", flush=True)
                 if not chunks_path.exists():
+                    print(f"[state] Cached chunks missing for {name!r}", flush=True)
                     continue
                 source_chunks = self ._load_chunks(chunks_path)
                 self ._all_chunks.extend(source_chunks)

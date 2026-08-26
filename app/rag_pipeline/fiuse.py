@@ -4,6 +4,10 @@ from typing import Tuple,List
 
 
 def reciprocal_rank_fusion(dense_results: List[Tuple[str, dict, float]], bm25_results: List[Tuple[str, dict, float]], k: int = 60,dense_weight:float=0.6,sparse_weight:float=0.4) -> List[Tuple[str, dict, float]]:
+    print(
+        f"[fusion] Combining dense={len(dense_results)} and bm25={len(bm25_results)} results",
+        flush=True,
+    )
     combined_scores = {}
     docs={}
 
@@ -20,4 +24,6 @@ def reciprocal_rank_fusion(dense_results: List[Tuple[str, dict, float]], bm25_re
     sorted_results = sorted(combined_scores.items(), key=lambda x: x[1], reverse=True)
 
 
-    return [(docs[cid][0], docs[cid][1], score) for cid, score in sorted_results]
+    fused = [(docs[cid][0], docs[cid][1], score) for cid, score in sorted_results]
+    print(f"[fusion] Produced {len(fused)} unique results", flush=True)
+    return fused

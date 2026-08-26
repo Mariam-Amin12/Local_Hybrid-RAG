@@ -14,6 +14,7 @@ class BM25Index:
         self.bm25 = None
 
     def build(self, chunks: List[TextChunk]) -> None:
+        print(f"[bm25] Building index from {len(chunks)} chunks", flush=True)
         if not chunks:
             self.chunks = []
             self.bm25 = None
@@ -28,7 +29,7 @@ class BM25Index:
 
         self.bm25 = BM25Okapi(tokenized_corpus)
 
-        print("Done building BM25")
+        print("[bm25] Index build complete", flush=True)
 
     def _tokenize_query(self, query: str) -> List[str]:
         return re.sub(
@@ -44,9 +45,11 @@ class BM25Index:
     ) -> List[Tuple[str, dict, float]]:
 
         if self.bm25 is None or not self.chunks:
+            print("[bm25] Search skipped: index is empty", flush=True)
             return []
 
         if not query.strip():
+            print("[bm25] Search skipped: query is empty", flush=True)
             return []
 
         tokenized_query = self._tokenize_query(query)
@@ -55,7 +58,7 @@ class BM25Index:
 
         top_indices = np.argsort(scores)[::-1][:top_k]
 
-        return [
+        matches = [
             (
                 self.chunks[i].text,
                 {
@@ -71,3 +74,5 @@ class BM25Index:
             for i in top_indices
             if scores[i] > 0
         ]
+        print(f"[bm25] Search returned {len(matches)} results", flush=True)
+        return matches
