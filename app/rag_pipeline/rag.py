@@ -44,7 +44,7 @@ class RAG:
             print (f"Source {source_name} already ingested. Skipping.")
             return {**self._ingested_sources[source_name], "status": "already_ingested"}
 
-        chunks_path = self.persist_dir / "chunks" / f"{source_name}_chunks.json"
+        chunks_path = self.persist_dir / f"{source_name}_chunks.json"
         stats:dict ={"source":source_name}
         print (f"Checking for existing chunks at {chunks_path} ...")
 
