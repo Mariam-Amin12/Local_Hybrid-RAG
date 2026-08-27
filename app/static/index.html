@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Podcast RAG — Chat with your Transcripts</title>
+  <title> RAG — Chat with your Agent</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -184,68 +184,92 @@
       color: var(--accent-dark);
     }
 
-    .transcript-list {
+    .library-label {
+      justify-content: space-between;
+    }
+
+    .library-count {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--text-muted);
+    }
+
+    .library-list {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
-    .transcript-item {
+    .library-item {
       display: flex;
-      align-items: flex-start;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
       padding: 9px 10px;
       border-radius: var(--radius-sm);
+      background: #fff;
+      border: 1px solid var(--border);
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, transform .1s;
+    }
+
+    .library-item:hover {
+      border-color: var(--accent);
       background: var(--accent-light);
-      border: 1px solid transparent;
-      cursor: default;
+      transform: translateX(1px);
     }
 
-    .transcript-item .t-icon {
-      font-size: 14px;
-      line-height: 1.4;
+    .library-item .lib-icon {
+      width: 26px;
+      height: 26px;
       flex-shrink: 0;
+      border-radius: 6px;
+      background: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
     }
 
-    .transcript-item .t-text {
+    .library-item .lib-body {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .library-item .lib-name {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .library-item .lib-meta {
+      font-size: 10px;
+      color: var(--text-faint);
       font-family: var(--font-mono);
-      font-size: 10.5px;
-      line-height: 1.5;
+      margin-top: 1px;
+    }
+
+    .library-item .lib-open {
+      flex-shrink: 0;
+      color: var(--text-faint);
+      opacity: 0;
+      transition: opacity .15s;
+    }
+
+    .library-item:hover .lib-open {
+      opacity: 1;
       color: var(--accent-dark);
-      word-break: break-all;
     }
 
     .empty-hint {
       font-size: 12px;
       color: var(--text-faint);
       padding: 4px 0;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .stat-card {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px 8px;
-      text-align: center;
-    }
-
-    .stat-card .stat-num {
-      font-size: 19px;
-      font-weight: 700;
-      color: var(--accent);
-      font-family: var(--font-mono);
-    }
-
-    .stat-card .stat-label {
-      font-size: 10.5px;
-      color: var(--text-muted);
-      margin-top: 2px;
     }
 
     .sidebar-footer {
@@ -760,8 +784,8 @@
     <!-- ============ SIDEBAR ============ -->
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <div class="brand-title"><span class="dot"></span>Podcast RAG</div>
-        <div class="brand-sub">Multi-transcript · Hybrid Retrieval · Reranking</div>
+        <div class="brand-title"><span class="dot"></span>RAG</div>
+        <div class="brand-sub">Hybrid Retrieval · Reranking</div>
       </div>
 
       <div class="side-section">
@@ -769,9 +793,7 @@
         <div class="field">
           <label for="providerSelect">LLM Provider</label>
           <select id="providerSelect">
-            <option value="openai">OpenAI (gpt-4o-mini)</option>
-            <option value="groq">Groq (llama-3.1)</option>
-            <option value="ollama">Ollama (qwen2.5:3b)</option>
+            <option value="ollama">ollama (qwen2.5:3b)</option>
           </select>
         </div>
         <div class="field">
@@ -785,7 +807,7 @@
       </div>
 
       <div class="side-section">
-        <div class="side-label">Upload Transcripts</div>
+        <div class="side-label">Add to Library</div>
         <div class="dropzone" id="dropzone">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
             <path d="M12 16V4M12 4l-4 4M12 4l4 4" />
@@ -797,24 +819,13 @@
         </div>
       </div>
 
-      <div class="side-section">
-        <div class="side-label">Active Transcripts</div>
-        <div class="transcript-list" id="transcriptList">
-          <div class="empty-hint">No transcripts ingested yet.</div>
+      <div class="side-section library-section" style="border-bottom:none;">
+        <div class="side-label library-label">
+          <span>Library</span>
+          <span class="library-count" id="libraryCount">0 files</span>
         </div>
-      </div>
-
-      <div class="side-section" style="border-bottom:none;">
-        <div class="side-label">Index Stats</div>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-num" id="statSources">0</div>
-            <div class="stat-label">Sources</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-num" id="statChunks">0</div>
-            <div class="stat-label">Chunks</div>
-          </div>
+        <div class="library-list" id="transcriptList">
+          <div class="empty-hint">No files in your library yet. Upload one above.</div>
         </div>
       </div>
 
@@ -834,7 +845,7 @@
     <main class="main">
       <div class="topbar">
         <div>
-          <h1>Chat with your Transcripts</h1>
+          <h1>Chat with your RAG</h1>
           <div class="top-sub" id="topSub">0 transcripts loaded</div>
         </div>
         <button class="clear-btn" id="clearChatBtn">Clear chat</button>
@@ -875,8 +886,7 @@
         dzTitle: document.getElementById('dzTitle'),
         fileInput: document.getElementById('fileInput'),
         transcriptList: document.getElementById('transcriptList'),
-        statSources: document.getElementById('statSources'),
-        statChunks: document.getElementById('statChunks'),
+        libraryCount: document.getElementById('libraryCount'),
         topSub: document.getElementById('topSub'),
         messages: document.getElementById('messages'),
         queryInput: document.getElementById('queryInput'),
@@ -909,23 +919,40 @@
         return h;
       }
 
+      function fileIcon(name) {
+        const ext = (name.split('.').pop() || '').toLowerCase();
+        if (ext === 'pdf') return '📕';
+        if (ext === 'docx') return '📘';
+        return '📄';
+      }
+
       function renderStats() {
-        els.statSources.textContent = sources.length;
         const totalChunks = sources.reduce((s, x) => s + (x.chunks || 0), 0);
-        els.statChunks.textContent = totalChunks;
+        els.libraryCount.textContent =
+          `${sources.length} file${sources.length === 1 ? '' : 's'} · ${totalChunks} chunk${totalChunks === 1 ? '' : 's'}`;
         els.topSub.textContent = `${sources.length} transcript${sources.length === 1 ? '' : 's'} loaded`;
       }
 
+      // Renders the sidebar as a real library: each ingested file is a
+      // clickable card that opens the original document via /files/{name},
+      // rather than an inert row of stats.
       function renderTranscripts() {
         if (!sources.length) {
-          els.transcriptList.innerHTML = '<div class="empty-hint">No transcripts ingested yet.</div>';
+          els.transcriptList.innerHTML = '<div class="empty-hint">No files in your library yet. Upload one above.</div>';
           return;
         }
         els.transcriptList.innerHTML = sources.map(s => `
-      <div class="transcript-item">
-        <span class="t-icon">📄</span>
-        <span class="t-text">${escapeHtml(s.name)} (${s.chunks})</span>
-      </div>
+      <a class="library-item" href="${API_BASE}/files/${encodeURIComponent(s.name)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeHtml(s.name)}">
+        <span class="lib-icon">${fileIcon(s.name)}</span>
+        <span class="lib-body">
+          <div class="lib-name">${escapeHtml(s.name)}</div>
+          <div class="lib-meta">${s.chunks} chunk${s.chunks === 1 ? '' : 's'}</div>
+        </span>
+        <svg class="lib-open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <path d="M15 3h6v6" /><path d="M10 14L21 3" />
+        </svg>
+      </a>
     `).join('');
       }
 

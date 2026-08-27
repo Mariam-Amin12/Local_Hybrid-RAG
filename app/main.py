@@ -23,7 +23,7 @@ from app.router.health import health_router
 from app.router.query import query_router
 from app.router.files import files
 
-from app.router.upload import upload
+# from app.router.upload import upload
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -92,7 +92,7 @@ app.include_router(chat_router)
 app.include_router(health_router)
 app.include_router(query_router)
 app.include_router(files)
-app.include_router(upload)
+# app.include_router(upload)
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

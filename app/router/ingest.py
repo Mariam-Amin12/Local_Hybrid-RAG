@@ -1,11 +1,9 @@
 import json
 import logging
 import os
-import tempfile
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-
+import re 
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -17,6 +15,10 @@ from fastapi import (
 from app.dependencies import get_executor, get_rag, verify_api_key
 from app.schemas.ingest import IngestResponse
 from app.services import rag_service
+
+_DEFAULT_DIR = Path(__file__).resolve().parent.parent / "uploads"
+UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", _DEFAULT_DIR))
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +64,8 @@ async def ingest_file(
     # 1. Validate filename
     filename = Path(file.filename or "upload").name
     _, ext = os.path.splitext(filename)
+
+    filename = re.sub(r"\s", "_", filename)  # Replace whitespace with underscores
     print(f"[request] POST /ingest filename={filename!r}, extension={ext!r}", flush=True)
 
     if ext.lower() not in _ALLOWED_EXTENSIONS:
@@ -71,24 +75,21 @@ async def ingest_file(
         )
 
     # 2. Create temporary file path
-    tmp_path = os.path.join(
-        tempfile.gettempdir(),
-        f"{uuid.uuid4().hex}_{filename}",
-    )
+    dest_path = UPLOAD_DIR / filename
 
     try:
         # 3. Save uploaded file
         contents = await file.read()
         print(f"[ingest] Read {len(contents)} bytes from {filename!r}", flush=True)
 
-        with open(tmp_path, "wb") as f:
+        with open(dest_path, "wb") as f:
             f.write(contents)
 
         # 4. Ingest the file
         stats = await rag_service.ingest_file(
             rag,
             executor,
-            tmp_path,
+            dest_path,
         )
         print(f"[ingest] Completed {filename!r}: {stats}", flush=True)
 
@@ -97,13 +98,10 @@ async def ingest_file(
             "Failed to ingest file: %s",
             filename,
         )
+        if dest_path.exists():
+            dest_path.unlink()
         raise
 
-    finally:
-        # 5. Always remove temporary file
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
-            print(f"[ingest] Removed temporary file {tmp_path}", flush=True)
 
     # 6. Log after successful ingestion
     background_tasks.add_task(
